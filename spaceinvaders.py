@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 # Space Invaders (beta 5 - depende de pygame)
 
