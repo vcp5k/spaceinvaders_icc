@@ -10,14 +10,9 @@ RUTAFUENTES = RUTABASE + "/fuentes/"
 RUTAIMAGENES = RUTABASE + "/imagenes/"
 RUTASONIDOS = RUTABASE + "/sonidos/"
 
-# Colores en RGB (R, G, B)
-BLANCO = (255, 255, 255)        # Texto normal
-VERDE = (78, 255, 87)           # Score
-AMARILLO = (241, 255, 0)        # Bonus Boss
-
-SCREEN = display.set_mode((800, ))
-FUENTE = RUTAFUENTES + 'space_invaders.ttf'
-NOMIMAGENES= ['nave', 'jefe', 'enemigo1_1', 'enemigo1_2', 'enemigo2_1', 'enemigo2_2', 'enemigo3_1', 'enemigo3_2', 'explosionazul', 'explosionverde', 'explosionmorada', 'laser', 'laserenemigo']
+SCREEN = display.set_mode((800, 595))
+FUENTE = RUTAFUENTES + 'pixel.ttf'
+NOMIMAGENES= ['nave', 'jefe', 'enemigo1a', 'enemigo1b', 'enemigo2a', 'enemigo2b', 'enemigo3a', 'enemigo3b', 'explosionazul', 'explosionverde', 'explosionmorada', 'laser', 'laserenemigo']
 IMAGENES = {nombre: image.load(RUTAIMAGENES + '{}.png'.format(nombre)).convert_alpha() for nombre in NOMIMAGENES}
 
 POSICION_PROTECTORES = 450     # Valor para posicion de protecciones
@@ -61,8 +56,8 @@ class Laser(sprite.Sprite):
 class Enemigo(sprite.Sprite):
     def __init__(self, linea, columna):
         sprite.Sprite.__init__(self)
-        self.linea = linea
         self.columna = columna
+        self.linea = linea
         self.imagenes = []
         self.cargar_imagenes()
         self.index = 0                              # Orden de Python 0, 1, 2 ,3...
@@ -79,7 +74,7 @@ class Enemigo(sprite.Sprite):
         game.screen.blit(self.imagen, self.rect)
 
     def cargar_imagenes(self):
-        imagenes = {0: ['1_2', '1_1'], 1: ['2_2', '2_1'], 2: ['2_2', '2_1'], 3: ['3_1', '3_2'], 4: ['3_1', '3_2']}
+        imagenes = {0: ['1b', '1a'], 1: ['2b', '2a'], 2: ['2a', '2b'], 3: ['3a', '3b'], 4: ['3b', '3a']}
         img1, img2 = (IMAGENES['enemigo{}'.format(NUMIMAGENES)] for NUMIMAGENES in imagenes[self.linea])
         self.imagenes.append(transform.scale(img1, (35, 35)))       # Tamaño enemigos 35px por 35 px
         self.imagenes.append(transform.scale(img2, (35, 35)))       # disfraces 1 y 2
@@ -139,25 +134,24 @@ class GrupoEnemigos(sprite.Group):                                  # Logica en 
     def remove_internal(self, *sprites):
         super(GrupoEnemigos, self).remove_internal(*sprites)
         for s in sprites:
-            self.kill(s)
+            self.mrt(s)
         self.update_velocidad()
 
     def columna_muerta(self, columna):
-        return not any(self.enemigos[linea][columna]
-                       for linea in range(self.lineas))
+        return not any(self.enemigos[linea][columna] for linea in range(self.lineas))
 
     def limrandom (self):
-        col = choice(self._Columnasv)
-        col_enemigos = (self.enemigos[linea - 1][col] for linea in range(self.lineas, 0, -1))
-        return next((en for en in col_enemigos if en is not None), None)
+        colum = choice(self._Columnasv)
+        columsenemigos = (self.enemigos[linea - 1][colum] for linea in range(self.lineas, 0, -1))
+        return next((en for en in columsenemigos if en is not None), None)
 
     def update_velocidad(self):
         if len(self) == 1:
-            self.tiempomovtot = 200
-        elif len(self) <= 10:
-            self.tiempomovtot = 400
+            self.tiempomovtot = 240
+        elif len(self) < 11:
+            self.tiempomovtot = 480
 
-    def kill(self, enemigo):
+    def mrt(self, enemigo):
         self.enemigos[enemigo.linea][enemigo.columna] = None
         columna_muerta = self.columna_muerta(enemigo.columna)
         if columna_muerta:
@@ -207,29 +201,29 @@ class Jefe(sprite.Sprite):
         self.repson = True                          # reproducir sonido jefe
 
     def update(self, tecla, TiempoActual, *args):
-        resettimer = False
+        reiniciartimer = False
         transcurrido = TiempoActual - self.timer
         if transcurrido > self.tiempomovtot:
             if (self.rect.x < 0 or self.rect.x > 800) and self.repson:
                 self.EntradaBoss.play()
                 self.repson = False
-            if self.rect.x < 840 and self.direccion == 1:
+            if self.rect.x <= 839 and self.direccion == 1:
                 self.rect.x += 2
                 game.screen.blit(self.imagen, self.rect)
-            if self.rect.x >= -100 and self.direccion == -1:
+            if self.rect.x > -101 and self.direccion == -1:
                 self.rect.x -= 2
                 game.screen.blit(self.imagen, self.rect)
 
         if self.rect.x < -90:
             self.repson = True
             self.direccion = 1
-            resettimer = True
-        if transcurrido > self.tiempomovtot and resettimer:
+            reiniciartimer = True
+        if transcurrido > self.tiempomovtot and reiniciartimer:
             self.timer = TiempoActual
         if self.rect.x > 830:
             self.repson = True
             self.direccion = -1
-            resettimer = True
+            reiniciartimer = True
 
 
 class ExplosionEnemiga(sprite.Sprite):
@@ -239,7 +233,6 @@ class ExplosionEnemiga(sprite.Sprite):
         self.imagen2 = transform.scale(self.obtener_imagen(enemigo.linea), (50, 45))
         self.rect = self.imagen.get_rect(topleft=(enemigo.rect.x, enemigo.rect.y))
         self.timer = time.get_ticks()
-
 
 
     def update(self, tiempo_actual, *args):
@@ -260,8 +253,7 @@ class ExplosionEnemiga(sprite.Sprite):
 class ExplosionJefe(sprite.Sprite):
     def __init__(self, jefe, puntaje, *groups):
         super(ExplosionJefe, self).__init__(*groups)
-        self.text = Text(FUENTE, 20, str(puntaje), BLANCO,
-                         jefe.rect.x + 20, jefe.rect.y + 6)
+        self.text = Text(FUENTE, 20, str(puntaje), (255, 255, 255), jefe.rect.x + 20, jefe.rect.y + 6)
         self.timer = time.get_ticks()
 
     def update(self, tiempo_actual, *args):
@@ -308,38 +300,34 @@ class Text(object):
         surface.blit(self.surface, self.rect)
 
 
-class SpaceInvaders(object):
+class SpcInv(object):
     def __init__(self):
         mixer.pre_init(44100, -16, 1, 4096)
         init()
         self.clock = time.Clock()
-        self.descripcion = display.set_caption('Space Invaders')
+        self.descripcion = display.set_caption('Invasión Espacial v1.15')
         self.screen = SCREEN
-        self.background = image.load(RUTAIMAGENES + 'background.jpg').convert()
-        self.startGame = False
-        self.mainScreen = True
+        self.fondo = image.load(RUTAIMAGENES + 'fondo.jpg').convert()
+        self.srt = False
+        self.inicio = True
         self.gameOver = False
         # Si pasa de ronda, posicion inicial de enemigos es más abajo
         self.PosicionEnemigo = POSICION_INICIAL_ENEMIGO
-        self.titulo = Text(FUENTE, 50, 'Space Invaders', BLANCO, 164, 155)
-        self.subtitulo = Text(FUENTE, 25, 'Pulsa cualquier tecla', BLANCO,
-                               215, 225)
-        self.creditos1 = Text(FUENTE, 15, "For ICC Lab 1.06 _ 2020-1", BLANCO,     # Ponerlo Arriba para no incomodar vista
-                               201, 5)
-        self.creditos2 = Text(FUENTE, 15, 'Sounds by Carbono Beats', BLANCO,        # Ponerlo arriba para no incomodar vista
-                               201, 20)
-        self.finjuego = Text(FUENTE, 50, 'Game Over', BLANCO, 250, 270)     # UTF-8 sale raro, mejor "Game Over"
-        self.ronda = Text(FUENTE, 50, 'Siguiente Ronda', BLANCO, 150, 270)
-        self.DescrEnemigo1 = Text(FUENTE, 25, '   =   10 pts', BLANCO, 368, 270)
-        self.DescrEnemigo2 = Text(FUENTE, 25, '   =  20 pts', BLANCO, 368, 320)
-        self.DescrEnemigo3 = Text(FUENTE, 25, '   =  30 pts', BLANCO, 368, 370)
-        self.DescrEnemigo4 = Text(FUENTE, 25, '   =  Bonus', AMARILLO, 368, 420)
-        self.scorenombre = Text(FUENTE, 20, 'Score', BLANCO, 5, 5)
-        self.vidasnombre = Text(FUENTE, 20, 'Vidas ', BLANCO, 640, 5)
-
-        self.vida1 = Vida(715, 3)
-        self.vida2 = Vida(741, 3)
-        self.vida3 = Vida(755, 3)
+        self.titulo = Text(FUENTE, 50, 'Space Invaders v1.15', (255, 255, 255), 100, 155)
+        self.subtitulo = Text(FUENTE, 25, 'Pulsa espacio para jugar', (255, 255, 255), 215, 225)
+        self.creditos1 = Text(FUENTE, 15, "For ICC Lab 1.06 _ 2020-1", (255, 255, 255), 201, 5)    # Ponerlo Arriba para no incomodar vista
+        self.creditos2 = Text(FUENTE, 15, 'Sounds by Carbono Beats', (255, 255, 255), 201, 20)       # Ponerlo arriba para no incomodar vista
+        self.finjuego = Text(FUENTE, 50, 'Game Over', (255, 255, 255), 250, 270)     # UTF-8 sale raro, mejor "Game Over"
+        self.ronda = Text(FUENTE, 50, 'Siguiente Ronda', (255, 255, 255), 150, 270)
+        self.DescrEnemigo1 = Text(FUENTE, 25, '   =   5', (255, 255, 255), 368, 270)
+        self.DescrEnemigo2 = Text(FUENTE, 25, '   =  15', (255, 255, 255), 368, 320)
+        self.DescrEnemigo3 = Text(FUENTE, 25, '   =  25', (255, 255, 255), 368, 370)
+        self.DescrEnemigo4 = Text(FUENTE, 25, '   =  Bonus', (255, 255, 0), 368, 420)
+        self.scorenombre = Text(FUENTE, 20, 'Score', (255, 255, 255), 5, 5)
+        self.vidasnombre = Text(FUENTE, 20, 'Vidas ', (255, 255, 255), 640, 5)
+        self.vida1 = Vida(715, 3)       # vidas restantes (esquina der sup)
+        self.vida2 = Vida(745, 3)
+        self.vida3 = Vida(770, 3)
         self.grupovidas = sprite.Group(self.vida1, self.vida2, self.vida3)
 
     def reset(self, score):
@@ -351,42 +339,36 @@ class SpaceInvaders(object):
         self.bossGroup = sprite.Group(self.naveboss)
         self.DisparosEnemigos = sprite.Group()
         self.crearenemigos()
-        self.allSprites = sprite.Group(self.usuario, self.enemigos,
-                                       self.grupovidas, self.naveboss)
+        self.allSprites = sprite.Group(self.usuario, self.enemigos, self.grupovidas, self.naveboss)
         self.teclas = key.get_pressed()
-
         self.timer = time.get_ticks()
         self.noteTimer = time.get_ticks()
         self.Timernave = time.get_ticks()
         self.score = score
-        self.create_audio()
+        self.son()
         self.nuevanave = False
         self.naveconvida = True
 
     def crearprotectores(self, number):
         Grupoprotectores = sprite.Group()
-        for linea in range(4):
-            for columna in range(9):
-                protector = Protector(10, VERDE, linea, columna)
-                protector.rect.x = 50 + (200 * number) + (columna * protector.anchura)
+        for linea in range(5):                      # altura prot
+            for columna in range(10):                # anchura prot
+                protector = Protector(10, (0, 251, 0), linea, columna)
+                protector.rect.x = 35 + (200 * number) + (columna * protector.anchura)
                 protector.rect.y = POSICION_PROTECTORES + (linea * protector.altura)
                 Grupoprotectores.add(protector)
         return Grupoprotectores
 
-    def create_audio(self):
+    def son(self):
         self.sonidos = {}
-        for NOMSONIDOS in ['disparo', 'disparo2', 'invadermatado', 'jefematado',
-                           'explosionusuario']:
-            self.sonidos[NOMSONIDOS] = mixer.Sound(
-                RUTASONIDOS + '{}.wav'.format(NOMSONIDOS))
-            self.sonidos[NOMSONIDOS].set_volume(0.5)
+        for NOMSONIDOS in ['disparo', 'disparo2', 'invadermatado', 'jefematado', 'explosionusuario']:
+            self.sonidos[NOMSONIDOS] = mixer.Sound(RUTASONIDOS + '{}.wav'.format(NOMSONIDOS))
 
     @staticmethod
     def abandonar(evt):
-        # type: (pygame.event.EventType) -> bool
-        return evt.type == QUIT or (evt.type == KEYDOWN and evt.key == K_ESCAPE) # Cuando se presione ESC se sale del juego
+        return evt.type == KEYDOWN and evt.key == K_ESCAPE # Cuando se presione ESC se sale del juego
 
-    def check_input(self):
+    def revisarteclado(self):
         self.teclas = key.get_pressed()
         for evnt in event.get():
             if self.abandonar(evnt):
@@ -395,19 +377,13 @@ class SpaceInvaders(object):
                 if evnt.key == K_SPACE:
                     if len(self.balas) == 0 and self.naveconvida:
                         if self.score < 1000:
-                            bala = Laser(self.usuario.rect.x + 23,
-                                            self.usuario.rect.y + 5, -1,
-                                            15, 'laser', 'center')
+                            bala = Laser(self.usuario.rect.x + 23, self.usuario.rect.y + 5, -1, 15, 'laser', 'center')
                             self.balas.add(bala)
                             self.allSprites.add(self.balas)
                             self.sonidos['disparo'].play()      # BALAS SIMPLES
                         else:
-                            bala1 = Laser(self.usuario.rect.x + 8,
-                                                self.usuario.rect.y + 5, -1,
-                                                15, 'laser', 'left')
-                            bala2= Laser(self.usuario.rect.x + 38,
-                                                 self.usuario.rect.y + 5, -1,
-                                                 15, 'laser', 'right')
+                            bala1 = Laser(self.usuario.rect.x + 8, self.usuario.rect.y + 5, -1, 15, 'laser', 'left')
+                            bala2= Laser(self.usuario.rect.x + 38, self.usuario.rect.y + 5, -1, 15, 'laser', 'right')
                             self.balas.add(bala1)
                             self.balas.add(bala2)
                             self.allSprites.add(self.balas)
@@ -431,19 +407,19 @@ class SpaceInvaders(object):
             self.allSprites.add(self.DisparosEnemigos)
             self.timer = time.get_ticks()
 
-    def calcular_puntaje(self, linea):
-        scores = {0: 30, 1: 20, 2: 20, 3: 10, 4: 10, 5: choice([25, 50, 100, 150, 300, 500])}
+    def calcpuntaje(self, linea):
+        scores = {0: 25, 1: 15, 2: 15, 3: 5, 4: 5, 5: choice([50, 100, 300, 500])}
         score = scores[linea]
         self.score += score
         return score
 
-    def create_main_menu(self):
-        self.enemigo3 = IMAGENES['enemigo3_1']
-        self.enemigo3 = transform.scale(self.enemigo3, (40, 40))
-        self.enemigo2 = IMAGENES['enemigo2_2']
-        self.enemigo2 = transform.scale(self.enemigo2, (40, 40))
-        self.enemigo1 = IMAGENES['enemigo1_2']
-        self.enemigo1 = transform.scale(self.enemigo1, (40, 40))
+    def creainicio(self):
+        self.enemigo3 = IMAGENES['enemigo3a']
+        self.enemigo3 = transform.scale(self.enemigo3, (40, 35))
+        self.enemigo2 = IMAGENES['enemigo2b']
+        self.enemigo2 = transform.scale(self.enemigo2, (40, 35))
+        self.enemigo1 = IMAGENES['enemigo1b']
+        self.enemigo1 = transform.scale(self.enemigo1, (40, 35))
         self.boss = IMAGENES['jefe']
         self.boss = transform.scale(self.boss, (80, 40))
         self.screen.blit(self.enemigo3, (318, 270))
@@ -451,19 +427,19 @@ class SpaceInvaders(object):
         self.screen.blit(self.enemigo1, (318, 370))
         self.screen.blit(self.boss, (299, 420))
 
-    def check_collisions(self):
+    def impactos(self):
         sprite.groupcollide(self.balas, self.DisparosEnemigos, True, True)
 
         for enemigo in sprite.groupcollide(self.enemigos, self.balas, True, True).keys():
             self.sonidos['invadermatado'].play()
-            self.calcular_puntaje(enemigo.linea)
+            self.calcpuntaje(enemigo.linea)
             ExplosionEnemiga(enemigo, self.grupoexp)
-            self.gameTimer = time.get_ticks()
+            self.timerdurpar = time.get_ticks()
 
         for boss in sprite.groupcollide(self.bossGroup, self.balas, True, True).keys():
             boss.EntradaBoss.stop()
             self.sonidos['jefematado'].play()
-            score = self.calcular_puntaje(boss.linea)
+            score = self.calcpuntaje(boss.linea)
             ExplosionJefe(boss, score, self.grupoexp)
             nuevanave = Jefe()
             self.allSprites.add(nuevanave)
@@ -474,11 +450,10 @@ class SpaceInvaders(object):
                 self.vida3.kill()
             elif self.vida2.alive():
                 self.vida2.kill()
-            elif self.vida1.alive():
-                self.vida1.kill()
-            else:
+            elif self.vida1.alive():            # Cuando se pierde la ult vida se acaba el juego,
+                self.vida1.kill()               # esto soluciona error de vida extra cuando ya no hay naves disp.
                 self.gameOver = True
-                self.startGame = False
+                self.srt = False
             self.sonidos['explosionusuario'].play()
             ExplosionUsuario(usuario, self.grupoexp)
             self.nuevanave = True
@@ -489,7 +464,7 @@ class SpaceInvaders(object):
             sprite.groupcollide(self.enemigos, self.GrupoUsuario, True, True)
             if not self.usuario.alive() or self.enemigos.liminf >= 600:
                 self.gameOver = True
-                self.startGame = False
+                self.srt = False
 
         sprite.groupcollide(self.balas, self.protectores, True, True)
         sprite.groupcollide(self.DisparosEnemigos, self.protectores, True, True)
@@ -505,20 +480,20 @@ class SpaceInvaders(object):
             self.naveconvida = True
 
     def Game_Over(self, TiempoActual):
-        self.screen.blit(self.background, (0, 0))
+        self.screen.blit(self.fondo, (0, 0))
         transcurrido = TiempoActual - self.timer
         if transcurrido < 750:
             self.finjuego.aparecerpantalla(self.screen)
             self.puntajefinal.aparecerpantalla(self.screen)
         elif 750 < transcurrido < 1515:
-            self.screen.blit(self.background, (0, 0))
+            self.screen.blit(self.fondo, (0, 0))
         elif 1515 < transcurrido < 2500:
             self.finjuego.aparecerpantalla(self.screen)
             self.puntajefinal.aparecerpantalla(self.screen)
-        elif 2500 < transcurrido < 2750:
-            self.screen.blit(self.background, (0, 0))
+        elif 2500 < transcurrido <= 3000:
+            self.screen.blit(self.fondo, (0, 0))
         elif transcurrido > 3000:
-            self.mainScreen = True
+            self.inicio = True
 
         for evnt in event.get():
             if self.abandonar(evnt):
@@ -526,7 +501,7 @@ class SpaceInvaders(object):
 
     def main(self):
         while True:
-            if self.mainScreen:
+            if self.inicio:
                 self.titulo.aparecerpantalla(self.screen)
                 self.subtitulo.aparecerpantalla(self.screen)
                 self.creditos1.aparecerpantalla(self.screen)
@@ -535,7 +510,7 @@ class SpaceInvaders(object):
                 self.DescrEnemigo2.aparecerpantalla(self.screen)
                 self.DescrEnemigo3.aparecerpantalla(self.screen)
                 self.DescrEnemigo4.aparecerpantalla(self.screen)
-                self.create_main_menu()
+                self.creainicio()
                 for evnt in event.get():
                     if self.abandonar(evnt):
                         sys.exit()
@@ -544,16 +519,16 @@ class SpaceInvaders(object):
                         self.protectores= sprite.Group(self.crearprotectores(0), self.crearprotectores(1), self.crearprotectores(2), self.crearprotectores(3))
                         self.grupovidas.add(self.vida1, self.vida2, self.vida3)
                         self.reset(0)
-                        self.startGame = True
-                        self.mainScreen = False
+                        self.srt = True
+                        self.inicio = False
 
-            elif self.startGame:
+            elif self.srt:
                 if not self.enemigos and not self.grupoexp:
                     TiempoActual = time.get_ticks()
-                    if TiempoActual - self.gameTimer < 3000:
-                        self.screen.blit(self.background, (0, 0))
-                        self.puntajeactual = Text(FUENTE, 20, str(self.score), VERDE, 85, 5)
-                        self.puntajefinal = Text(FUENTE, 30, str(self.score), VERDE, 370, 350)
+                    if TiempoActual - self.timerdurpar < 3000:
+                        self.screen.blit(self.fondo, (0, 0))
+                        self.puntajeactual = Text(FUENTE, 20, str(self.score), (0, 251, 0), 85, 5)
+                        self.puntajefinal = Text(FUENTE, 30, str(self.score), (0, 251, 0), 370, 350)
                         self.scorenombre.aparecerpantalla(self.screen)
                         self.puntajeactual.aparecerpantalla(self.screen)
                         self.creditos1.aparecerpantalla(self.screen)
@@ -561,28 +536,28 @@ class SpaceInvaders(object):
                         self.ronda.aparecerpantalla(self.screen)
                         self.vidasnombre.aparecerpantalla(self.screen)
                         self.grupovidas.update()
-                        self.check_input()
-                    if TiempoActual - self.gameTimer > 3000:
+                        self.revisarteclado()
+                    if TiempoActual - self.timerdurpar > 3000:
                         # Conforme tiempo avanza enemigos se acercan al usuario
                         self.PosicionEnemigo += MOVIMIENTO_VERTICAL_ENEMIGOS
                         self.reset(self.score)
-                        self.gameTimer += 3000
+                        self.timerdurpar += 3000
                 else:
                     TiempoActual = time.get_ticks()
-                    self.screen.blit(self.background, (0, 0))
+                    self.screen.blit(self.fondo, (0, 0))
                     self.protectores.update(self.screen)
-                    self.puntajeactual = Text(FUENTE, 20, str(self.score), VERDE, 85, 5)
-                    self.puntajefinal = Text(FUENTE, 30, str(self.score), VERDE, 370, 350)
+                    self.puntajeactual = Text(FUENTE, 20, str(self.score), (0, 251, 0), 85, 5)
+                    self.puntajefinal = Text(FUENTE, 35, str(self.score), (0, 251, 0), 370, 350)
                     self.scorenombre.aparecerpantalla(self.screen)
                     self.puntajeactual.aparecerpantalla(self.screen)
                     self.creditos1.aparecerpantalla(self.screen)
                     self.creditos2.aparecerpantalla(self.screen)
                     self.vidasnombre.aparecerpantalla( self.screen)
                     self.enemigos.update(TiempoActual)
-                    self.check_input()
+                    self.revisarteclado()
                     self.allSprites.update(self.teclas, TiempoActual)
                     self.grupoexp.update(TiempoActual)
-                    self.check_collisions()
+                    self.impactos()
                     self.crear_nueva_nave(self.nuevanave, TiempoActual)
                     self.dispararenemigos()
 
@@ -595,8 +570,6 @@ class SpaceInvaders(object):
             display.update()
             self.clock.tick(60)
 
-
 if __name__ == '__main__':
-    game = SpaceInvaders()
+    game = SpcInv()
     game.main()
-
