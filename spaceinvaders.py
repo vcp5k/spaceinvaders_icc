@@ -1,15 +1,14 @@
 
-# Space Invaders (beta 5 - depende de pygame)
-
-from pygame import *
+# Space Invaders (beta 9 - depende de pygame)
+import pygame
 import sys
 from os.path import abspath, dirname
 from random import choice
 
-BASE_PATH = abspath(dirname(__file__))
-FONT_PATH = BASE_PATH + '/fuentes/'
-IMAGE_PATH = BASE_PATH + '/imagenes/'
-SOUND_PATH = BASE_PATH + '/sonidos/'
+RUTABASE = abspath(dirname(__file__))
+RUTAFUENTES = RUTABASE + "/fuentes/"
+RUTAIMAGENES = RUTABASE + "/imagenes/"
+RUTASONIDOS = RUTABASE + "/sonidos/"
 
 # Colores en RGB (R, G, B)
 BLANCO = (255, 255, 255)
@@ -17,17 +16,11 @@ VERDE = (78, 255, 87)
 AMARILLO = (241, 255, 0)
 AZUL = (80, 255, 239)
 MORADO = (203, 0, 255)
-ROJO = (237, 28, 36)
 
 SCREEN = display.set_mode((800, 600))
-FUENTE = FONT_PATH + 'space_invaders.ttf'
-IMG_NAMES = ['nave', 'jefe',
-             'enemigo1_1', 'enemigo1_2',
-             'enemigo2_1', 'enemigo2_2',
-             'enemigo3_1', 'enemigo3_2',
-             'explosionazul', 'explosionverde', 'explosionmorada',
-             'laser', 'laserenemigo']
-IMAGENES = {name: image.load(IMAGE_PATH + '{}.png'.format(name)).convert_alpha() for name in IMG_NAMES}
+FUENTE = RUTAFUENTES + 'space_invaders.ttf'
+NOMIMAGENES= ['nave', 'jefe', 'enemigo1_1', 'enemigo1_2', 'enemigo2_1', 'enemigo2_2', 'enemigo3_1', 'enemigo3_2', 'explosionazul', 'explosionverde', 'explosionmorada', 'laser', 'laserenemigo']
+IMAGENES = {nombre: image.load(RUTAIMAGENES + '{}.png'.format(nombre)).convert_alpha() for nombre in NOMIMAGENES}
 
 POSICION_PROTECTORES = 450     # Valor para posicion de protecciones
 POSICION_INICIAL_ENEMIGO = 65  # Valor inicial para nueva partida
@@ -37,31 +30,31 @@ MOVIMIENTO_VERTICAL_ENEMIGOS = 35    # Valor de movimiento hacia abajo
 class Nave(sprite.Sprite):
     def __init__(self):
         sprite.Sprite.__init__(self)
-        self.image = IMAGENES['nave']
-        self.rect = self.image.get_rect(topleft=(375, 540))
+        self.imagen = IMAGENES['nave']
+        self.rect = self.imagen.get_rect(topleft=(375, 540))
         self.velocidad = 5
 
     def update(self, keys, *args):
-        if keys[K_LEFT] and self.rect.x > 10:
-            self.rect.x -= self.velocidad
-        if keys[K_RIGHT] and self.rect.x < 740:
+        if keys[K_RIGHT] and self.rect.x < 745:     #K_RIGHT == Tecla Derecha
             self.rect.x += self.velocidad
-        game.screen.blit(self.image, self.rect)
+        if keys[K_LEFT] and self.rect.x > 15:       #K_LEFT == Tecla Izquierda
+            self.rect.x -= self.velocidad
+        game.screen.blit(self.imagen, self.rect)
 
 
 class Laser(sprite.Sprite):
-    def __init__(self, xpos, ypos, direccion, velocidad, file, lado):
+    def __init__(self, x, y, direccion, velocidad, archivo, lado):
         sprite.Sprite.__init__(self)
-        self.image = IMAGENES[file]
-        self.rect = self.image.get_rect(topleft=(xpos, ypos))
+        self.imagen = IMAGENES[archivo]
+        self.rect = self.imagen.get_rect(topleft=(x, y))
         self.velocidad = velocidad
-        self.direction = direccion
+        self.direccion = direccion
         self.lado = lado
-        self.filename = file
+        self.filename = archivo
 
     def update(self, keys, *args):
-        game.screen.blit(self.image, self.rect)
-        self.rect.y += self.velocidad * self.direction
+        game.screen.blit(self.imagen, self.rect)
+        self.rect.y += self.velocidad * self.direccion
         if self.rect.y < 15 or self.rect.y > 600:
             self.kill()
 
@@ -71,27 +64,27 @@ class Enemigo(sprite.Sprite):
         sprite.Sprite.__init__(self)
         self.linea = linea
         self.columna = columna
-        self.images = []
+        self.imagenes = []
         self.cargar_imagenes()
-        self.index = 0
-        self.image = self.images[self.index]
-        self.rect = self.image.get_rect()
+        self.index = 0                              # Orden de Python 0, 1, 2 ,3...
+        self.imagen = self.imagenes[self.index]     # carga imagenes de acuerdo al index
+        self.rect = self.imagen.get_rect()
 
     def cambiar_imagen(self):
-        self.index += 1
-        if self.index >= len(self.images):
+        self.index += 1                             # aumenta contador de index hasta el largo de lista de imagenes
+        if self.index >= len(self.imagens):         # si hay mas index que imagenes (filas de enemigos) resetea el contador
             self.index = 0
-        self.image = self.images[self.index]
+        self.imagen = self.imagenes[self.index]
 
     def update(self, *args):
-        game.screen.blit(self.image, self.rect)
+        game.screen.blit(self.imagen, self.rect)
 
     def cargar_imagenes(self):
         imagenes = {0: ['1_2', '1_1'], 1: ['2_2', '2_1'], 2: ['2_2', '2_1'], 3: ['3_1', '3_2'], 4: ['3_1', '3_2'] }
-        img1, img2 = (IMAGENES['enemigo{}'.format(img_num)] for img_num in
+        img1, img2 = (IMAGENES['enemigo{}'.format(NUMIMAGENES)] for NUMIMAGENES in
                       imagenes[self.linea])
-        self.images.append(transform.scale(img1, (40, 35)))
-        self.images.append(transform.scale(img2, (40, 35)))
+        self.imagenes.append(transform.scale(img1, (35, 35)))       # Tamaño enemigos 35px por 35 px
+        self.imagenes.append(transform.scale(img2, (35, 35)))
 
 
 class GrupoEnemigos(sprite.Group):
@@ -103,7 +96,7 @@ class GrupoEnemigos(sprite.Group):
         self.leftAddMove = 0
         self.rightAddMove = 0
         self.moveTime = 600
-        self.direction = 1
+        self.direccion = 1
         self.rightMoves = 30
         self.leftMoves = 30
         self.moveNumber = 15
@@ -115,7 +108,7 @@ class GrupoEnemigos(sprite.Group):
 
     def update(self, tiempo_actual):
         if tiempo_actual - self.timer > self.moveTime:
-            if self.direction == 1:
+            if self.direccion == 1:
                 mov_max = self.rightMoves + self.rightAddMove
             else:
                 mov_max = self.leftMoves + self.leftAddMove
@@ -123,7 +116,7 @@ class GrupoEnemigos(sprite.Group):
             if self.moveNumber >= mov_max:
                 self.leftMoves = 30 + self.rightAddMove
                 self.rightMoves = 30 + self.leftAddMove
-                self.direction *= -1
+                self.direccion *= -1
                 self.moveNumber = 0
                 self.bottom = 0
                 for enemigo in self:
@@ -132,7 +125,7 @@ class GrupoEnemigos(sprite.Group):
                     if self.bottom < enemigo.rect.y + 35:
                         self.bottom = enemigo.rect.y + 35
             else:
-                velocity = 10 if self.direction == 1 else -10
+                velocity = 10 if self.direccion == 1 else -10
                 for enemy in self:
                     enemy.rect.x += velocity
                     enemy.cambiar_imagen()
@@ -191,25 +184,25 @@ class Protector(sprite.Sprite):
         self.height = tamano
         self.width = tamano
         self.color = color
-        self.image = Surface((self.width, self.height))
-        self.image.fill(self.color)
-        self.rect = self.image.get_rect()
+        self.imagen = Surface((self.width, self.height))
+        self.imagen.fill(self.color)
+        self.rect = self.imagen.get_rect()
         self.linea = linea
         self.columna = columna
 
     def update(self, keys, *args):
-        game.screen.blit(self.image, self.rect)
+        game.screen.blit(self.imagen, self.rect)
 
 
 class Jefe(sprite.Sprite):
     def __init__(self):
         sprite.Sprite.__init__(self)
-        self.image = IMAGENES['jefe']
-        self.image = transform.scale(self.image, (75, 35))
-        self.rect = self.image.get_rect(topleft=(-80, 45))
+        self.imagen = IMAGENES['jefe']
+        self.imagen = transform.scale(self.imagen, (75, 35))
+        self.rect = self.imagen.get_rect(topleft=(-80, 45))
         self.linea = 5
         self.moveTime = 25000
-        self.direction = 1
+        self.direccion = 1
         self.timer = time.get_ticks()
         self.EntradaBoss = mixer.Sound(SOUND_PATH + 'entradajefe.wav')
         self.EntradaBoss.set_volume(0.3)
@@ -222,22 +215,22 @@ class Jefe(sprite.Sprite):
             if (self.rect.x < 0 or self.rect.x > 800) and self.playSound:
                 self.EntradaBoss.play()
                 self.playSound = False
-            if self.rect.x < 840 and self.direction == 1:
+            if self.rect.x < 840 and self.direccion == 1:
                 self.EntradaBoss.fadeout(4000)
                 self.rect.x += 2
-                game.screen.blit(self.image, self.rect)
-            if self.rect.x > -100 and self.direction == -1:
+                game.screen.blit(self.imagen, self.rect)
+            if self.rect.x > -100 and self.direccion == -1:
                 self.EntradaBoss.fadeout(4000)
                 self.rect.x -= 2
-                game.screen.blit(self.image, self.rect)
+                game.screen.blit(self.imagen, self.rect)
 
         if self.rect.x > 830:
             self.playSound = True
-            self.direction = -1
+            self.direccion = -1
             resettimer = True
         if self.rect.x < -90:
             self.playSound = True
-            self.direction = 1
+            self.direccion = 1
             resettimer = True
         if transcurrido > self.moveTime and resettimer:
             self.timer = TiempoActual
@@ -246,22 +239,22 @@ class Jefe(sprite.Sprite):
 class ExplosionEnemiga(sprite.Sprite):
     def __init__(self, enemy, *groups):
         super(ExplosionEnemiga, self).__init__(*groups)
-        self.image = transform.scale(self.get_image(enemy.linea), (40, 35))
-        self.image2 = transform.scale(self.get_image(enemy.linea), (50, 45))
-        self.rect = self.image.get_rect(topleft=(enemy.rect.x, enemy.rect.y))
+        self.imagen = transform.scale(self.obtener_imagen(enemy.linea), (35, 35))
+        self.imagen2 = transform.scale(self.obtener_imagen(enemy.linea), (50, 45))
+        self.rect = self.imagen.get_rect(topleft=(enemy.rect.x, enemy.rect.y))
         self.timer = time.get_ticks()
 
     @staticmethod  # Metodo estatico (solucion bug colores: hay 2 lineas pero parametro es 1)
-    def get_image(linea):
-        img_colors = ['morada', 'azul', 'azul', 'verde', 'verde']      # 2 veces azul y verde por dif. disfraces
-        return IMAGENES['explosion{}'.format(img_colors[linea])]
+    def obtener_imagen(linea):
+        COLIMAGENES = ['morada', 'azul', 'azul', 'verde', 'verde']      # 2 veces azul y verde por dif. disfraces
+        return IMAGENES['explosion{}'.format(COLIMAGENES[linea])]
 
     def update(self, tiempo_actual, *args):
         transcurrido = tiempo_actual - self.timer
         if transcurrido <= 100:
-            game.screen.blit(self.image, self.rect)
+            game.screen.blit(self.imagen, self.rect)
         elif transcurrido <= 200:
-            game.screen.blit(self.image2, (self.rect.x - 6, self.rect.y - 6))
+            game.screen.blit(self.imagen2, (self.rect.x - 6, self.rect.y - 6))
         elif 400 < transcurrido:
             self.kill()
 
@@ -284,34 +277,34 @@ class ExplosionJefe(sprite.Sprite):
 class ExplosionUsuario(sprite.Sprite):
     def __init__(self, ship, *groups):
         super(ExplosionUsuario, self).__init__(*groups)
-        self.image = IMAGENES['nave']
-        self.rect = self.image.get_rect(topleft=(ship.rect.x, ship.rect.y))
+        self.imagen = IMAGENES['nave']
+        self.rect = self.imagen.get_rect(topleft=(ship.rect.x, ship.rect.y))
         self.timer = time.get_ticks()
 
     def update(self, tiempo_actual, *args):
         transcurrido = tiempo_actual - self.timer
         if 300 < transcurrido <= 600:
-            game.screen.blit(self.image, self.rect)
+            game.screen.blit(self.imagen, self.rect)
         elif 900 < transcurrido:
             self.kill()
 
 
 class Vida(sprite.Sprite):
-    def __init__(self, xpos, ypos):
+    def __init__(self, x, y):
         sprite.Sprite.__init__(self)
-        self.image = IMAGENES['nave']
-        self.image = transform.scale(self.image, (23, 23))
-        self.rect = self.image.get_rect(topleft=(xpos, ypos))
+        self.imagen = IMAGENES['nave']
+        self.imagen = transform.scale(self.imagen, (23, 23))
+        self.rect = self.imagen.get_rect(topleft=(x, y))
 
     def update(self, *args):
-        game.screen.blit(self.image, self.rect)
+        game.screen.blit(self.imagen, self.rect)
 
 
 class Text(object):
-    def __init__(self, textFont, tamano, mensaje, color, xpos, ypos):
+    def __init__(self, textFont, tamano, mensaje, color, x, y):
         self.font = font.Font(textFont, tamano)
         self.surface = self.font.render(mensaje, True, color)
-        self.rect = self.surface.get_rect(topleft=(xpos, ypos))
+        self.rect = self.surface.get_rect(topleft=(x, y))
 
     def draw(self, surface):
         surface.blit(self.surface, self.rect)
@@ -324,7 +317,7 @@ class SpaceInvaders(object):
         self.clock = time.Clock()
         self.caption = display.set_caption('Space Invaders')
         self.screen = SCREEN
-        self.background = image.load(IMAGE_PATH + 'background.jpg').convert()
+        self.background = image.load(RUTAIMAGENES + 'background.jpg').convert()
         self.startGame = False
         self.mainScreen = True
         self.gameOver = False
@@ -333,22 +326,22 @@ class SpaceInvaders(object):
         self.titleText = Text(FUENTE, 50, 'Space Invaders', BLANCO, 164, 155)
         self.titleText2 = Text(FUENTE, 25, 'Pulsa cualquier tecla', BLANCO,
                                201, 225)
-        self.titleText3 = Text(FUENTE, 15, 'Code by vcp3k', BLANCO,     # Ponerlo Arriba para no incomodar vista
+        self.titleText3 = Text(FUENTE, 15, "For ICC Lab 1.06 _ 2020-1", BLANCO,     # Ponerlo Arriba para no incomodar vista
                                201, 5)
         self.titleText4 = Text(FUENTE, 15, 'Sounds by Carbono Beats', BLANCO,        # Ponerlo arriba para no incomodar vista
                                201, 20)
-        self.gameOverText = Text(FUENTE, 50, 'Game Over', BLANCO, 250, 270)     # No soporta UTF-8, mejor "Game Over"
+        self.gameOverText = Text(FUENTE, 50, 'Game Over', BLANCO, 250, 270)     # UTF-8 sale raro, mejor "Game Over"
         self.nextRoundText = Text(FUENTE, 50, 'Siguiente Ronda', BLANCO, 150, 270)
         self.enemy1Text = Text(FUENTE, 25, '   =   10 pts', VERDE, 368, 270)
         self.enemy2Text = Text(FUENTE, 25, '   =  20 pts', AZUL, 368, 320)
         self.enemy3Text = Text(FUENTE, 25, '   =  30 pts', MORADO, 368, 370)
-        self.enemy4Text = Text(FUENTE, 25, '   =  Bonus', ROJO, 368, 420)
+        self.enemy4Text = Text(FUENTE, 25, '   =  Bonus', AMARILLO, 368, 420)
         self.scoreText = Text(FUENTE, 20, 'Score', BLANCO, 5, 5)
         self.livesText = Text(FUENTE, 20, 'Vidas ', BLANCO, 640, 5)
 
         self.life1 = Vida(715, 3)
-        self.life2 = Vida(742, 3)
-        self.life3 = Vida(769, 3)
+        self.life2 = Vida(740, 3)
+        self.life3 = Vida(750, 3)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 
     def reset(self, score):
@@ -383,42 +376,24 @@ class SpaceInvaders(object):
         return blockerGroup
 
     def create_audio(self):
-        self.sounds = {}
-        for sound_name in ['disparo', 'disparo2', 'invadermatado', 'jefematado',
+        self.sonidos = {}
+        for NOMSONIDOS in ['disparo', 'disparo2', 'invadermatado', 'jefematado',
                            'explosionusuario']:
-            self.sounds[sound_name] = mixer.Sound(
-                SOUND_PATH + '{}.wav'.format(sound_name))
-            self.sounds[sound_name].set_volume(0.2)
-
-        self.musicNotes = [mixer.Sound(SOUND_PATH + '{}.wav'.format(i)) for i
-                           in range(4)]
-        for sound in self.musicNotes:
-            sound.set_volume(0.5)
-
-        self.noteIndex = 0
-
-    def play_main_music(self, TiempoActual):
-        if TiempoActual - self.noteTimer > self.enemies.moveTime:
-            self.note = self.musicNotes[self.noteIndex]
-            if self.noteIndex < 3:
-                self.noteIndex += 1
-            else:
-                self.noteIndex = 0
-
-            self.note.play()
-            self.noteTimer += self.enemies.moveTime
+            self.sonidos[NOMSONIDOS] = mixer.Sound(
+                RUTASONIDOS + '{}.wav'.format(NOMSONIDOS))
+            self.sonidos[NOMSONIDOS].set_volume(0.5)
 
     @staticmethod
-    def should_exit(evt):
+    def abandonar(evt):
         # type: (pygame.event.EventType) -> bool
-        return evt.type == QUIT or (evt.type == KEYUP and evt.key == K_ESCAPE)
+        return evt.type == QUIT or (evt.type == KEYDOWN and evt.key == K_ESCAPE) # Cuando se presione ESC se sale del juego
 
     def check_input(self):
         self.keys = key.get_pressed()
         for e in event.get():
-            if self.should_exit(e):
-                sys.exit()
-            if e.type == KEYDOWN:
+            if self.abandonar(e):
+                sys.exit()          # Cierra sistema/Juego
+            if e.type == KEYDOWN:   # KEYDOWN == APRETAR / KEYUP == SOLTAR
                 if e.key == K_SPACE:
                     if len(self.bullets) == 0 and self.shipAlive:
                         if self.score < 1000:
@@ -427,7 +402,7 @@ class SpaceInvaders(object):
                                             15, 'laser', 'center')
                             self.bullets.add(bullet)
                             self.allSprites.add(self.bullets)
-                            self.sounds['disparo'].play()
+                            self.sonidos['disparo'].play()
                         else:
                             leftbullet = Laser(self.usuario.rect.x + 8,
                                                 self.usuario.rect.y + 5, -1,
@@ -438,7 +413,7 @@ class SpaceInvaders(object):
                             self.bullets.add(leftbullet)
                             self.bullets.add(rightbullet)
                             self.allSprites.add(self.bullets)
-                            self.sounds['disparo2'].play()
+                            self.sonidos['disparo2'].play()
 
     def make_enemies(self):
         enemigos = GrupoEnemigos(10, 5)
@@ -492,7 +467,7 @@ class SpaceInvaders(object):
 
         for enemy in sprite.groupcollide(self.enemies, self.bullets,
                                          True, True).keys():
-            self.sounds['invadermatado'].play()
+            self.sonidos['invadermatado'].play()
             self.calcular_puntaje(enemy.linea)
             ExplosionEnemiga(enemy, self.explosionsGroup)
             self.gameTimer = time.get_ticks()
@@ -500,7 +475,7 @@ class SpaceInvaders(object):
         for boss in sprite.groupcollide(self.bossGroup, self.bullets,
                                            True, True).keys():
             boss.EntradaBoss.stop()
-            self.sounds['jefematado'].play()
+            self.sonidos['jefematado'].play()
             score = self.calcular_puntaje(boss.linea)
             ExplosionJefe(boss, score, self.explosionsGroup)
             newShip = Jefe()
@@ -518,7 +493,7 @@ class SpaceInvaders(object):
             else:
                 self.gameOver = True
                 self.startGame = False
-            self.sounds['explosionusuario'].play()
+            self.sonidos['explosionusuario'].play()
             ExplosionUsuario(usuario, self.explosionsGroup)
             self.makeNewShip = True
             self.shipTimer = time.get_ticks()
